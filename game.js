@@ -40,11 +40,16 @@ class BattleScene extends Phaser.Scene {
 
   createHud() {
     this.add.rectangle(WIDTH / 2, 16, WIDTH - 12, 24, 0x10243a, 0.78).setStrokeStyle(1, 0xc8d9ac, 0.7);
-    this.waveText = this.add.text(12, 10, '', { fontSize: '11px', fontStyle: 'bold', color: '#ffffff' });
-    this.goldText = this.add.text(WIDTH - 12, 10, '', { fontSize: '11px', fontStyle: 'bold', color: '#ffe27a' }).setOrigin(1, 0);
-    this.ammoText = this.add.text(WIDTH / 2, 11, '', { fontSize: '10px', color: '#d7e5ff' }).setOrigin(0.5);
-    this.hpBack = this.add.rectangle(10, 34, 92, 6, 0x301d28).setOrigin(0, 0.5);
-    this.hpFill = this.add.rectangle(10, 34, 92, 6, 0x45d36f).setOrigin(0, 0.5);
+    const heart = this.add.graphics();
+    heart.fillStyle(0xff6070).fillCircle(14, 13, 5).fillCircle(21, 13, 5).fillTriangle(9, 14, 26, 14, 17.5, 23);
+    this.hpBack = this.add.rectangle(32, 16, 86, 13, 0x531f2b).setOrigin(0, 0.5);
+    this.hpFill = this.add.rectangle(32, 16, 86, 13, 0xe84858).setOrigin(0, 0.5);
+    this.hpText = this.add.text(75, 16, '', { fontSize: '10px', fontStyle: 'bold', color: '#ffffff', stroke: '#55111b', strokeThickness: 2 }).setOrigin(0.5);
+    this.ammoText = this.add.text(WIDTH / 2, 16, '', { fontSize: '11px', fontStyle: 'bold', color: '#e7f1ff' }).setOrigin(0.5);
+    const slime = this.add.graphics();
+    slime.fillStyle(0x8c6be8).fillCircle(337, 17, 8).fillTriangle(329, 18, 345, 18, 337, 7);
+    slime.fillStyle(0xffffff).fillCircle(334, 16, 2).fillCircle(340, 16, 2);
+    this.monsterText = this.add.text(350, 16, '', { fontSize: '11px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0, 0.5);
     this.message = this.add.text(WIDTH / 2, 63, '', { fontSize: '25px', fontStyle: 'bold', color: '#ffffff', stroke: '#17213d', strokeThickness: 6 }).setOrigin(0.5).setDepth(10);
     this.updateHud();
   }
@@ -93,6 +98,7 @@ class BattleScene extends Phaser.Scene {
     enemy.bar = this.add.rectangle(enemy.body.x - size, enemy.body.y - size - 13, size * 2, 5, 0xe95868).setOrigin(0, 0.5);
     enemy.body.setData('enemy', enemy);
     this.enemies.push(enemy);
+    this.updateHud();
   }
 
   update(_, delta) {
@@ -173,9 +179,9 @@ class BattleScene extends Phaser.Scene {
   }
 
   updateHud() {
-    this.waveText.setText(`WAVE ${this.wave} / 3`);
-    this.goldText.setText(`✦ ${this.gold}`);
-    this.ammoText.setText(`수동 공격  ${'●'.repeat(this.ammo)}${'○'.repeat(3 - this.ammo)}`);
+    this.hpText.setText(`${this.castleHp} / 100`);
+    this.ammoText.setText(`탄약 ${this.ammo} / 3`);
+    this.monsterText.setText(`× ${this.enemies.length + this.pendingSpawns}`);
     this.hpFill.displayWidth = 92 * this.castleHp / 100;
   }
 }

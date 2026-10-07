@@ -26,45 +26,44 @@ class BattleScene extends Phaser.Scene {
 
   drawBackground() {
     const g = this.add.graphics();
-    g.fillGradientStyle(0x17294f, 0x17294f, 0x4e7ba1, 0x4e7ba1, 1);
+    g.fillGradientStyle(0x6abf4b, 0x6abf4b, 0x2e8541, 0x2e8541, 1);
     g.fillRect(0, 0, WIDTH, HEIGHT);
-    g.fillStyle(0x2d694f, 1);
-    g.fillRect(0, 494, WIDTH, 226);
-    g.fillStyle(0x1f553f, 1);
-    for (let x = 0; x < WIDTH; x += 30) g.fillTriangle(x, 494, x + 24, 494, x + 12, 467);
-    g.fillStyle(0x6d4a32, 1);
-    g.fillRect(0, 570, WIDTH, 64);
-    g.lineStyle(2, 0x99704c, 0.55);
-    for (let x = -30; x < WIDTH; x += 42) g.lineBetween(x, 634, x + 70, 570);
+    g.fillStyle(0x95d95f, 0.28);
+    for (let y = 55; y < HEIGHT; y += 32) {
+      for (let x = 115 + (y % 3) * 7; x < WIDTH; x += 38) g.fillCircle(x, y, 3);
+    }
+    g.fillStyle(0x8e673d, 0.75);
+    g.fillRect(102, 0, 52, HEIGHT);
+    g.lineStyle(2, 0xb78c58, 0.7);
+    for (let y = -30; y < HEIGHT; y += 44) g.lineBetween(102, y, 154, y + 28);
   }
 
   createHud() {
-    this.add.rectangle(WIDTH / 2, 34, WIDTH - 24, 54, 0x0b1530, 0.86).setStrokeStyle(1, 0x8fa7cf);
-    this.waveText = this.add.text(18, 17, '', { fontSize: '16px', fontStyle: 'bold', color: '#ffffff' });
-    this.goldText = this.add.text(WIDTH - 18, 17, '', { fontSize: '16px', fontStyle: 'bold', color: '#ffe27a' }).setOrigin(1, 0);
-    this.ammoText = this.add.text(WIDTH / 2, 51, '', { fontSize: '14px', color: '#d7e5ff' }).setOrigin(0.5);
-    this.hpBack = this.add.rectangle(80, 100, 130, 13, 0x301d28).setOrigin(0, 0.5);
-    this.hpFill = this.add.rectangle(80, 100, 130, 13, 0x45d36f).setOrigin(0, 0.5);
-    this.add.text(18, 88, '성 체력', { fontSize: '13px', color: '#ffffff' });
-    this.message = this.add.text(WIDTH / 2, 145, '', { fontSize: '25px', fontStyle: 'bold', color: '#ffffff', stroke: '#17213d', strokeThickness: 6 }).setOrigin(0.5).setDepth(10);
+    this.add.rectangle(WIDTH / 2, 16, WIDTH - 12, 24, 0x10243a, 0.78).setStrokeStyle(1, 0xc8d9ac, 0.7);
+    this.waveText = this.add.text(12, 10, '', { fontSize: '11px', fontStyle: 'bold', color: '#ffffff' });
+    this.goldText = this.add.text(WIDTH - 12, 10, '', { fontSize: '11px', fontStyle: 'bold', color: '#ffe27a' }).setOrigin(1, 0);
+    this.ammoText = this.add.text(WIDTH / 2, 11, '', { fontSize: '10px', color: '#d7e5ff' }).setOrigin(0.5);
+    this.hpBack = this.add.rectangle(10, 34, 92, 6, 0x301d28).setOrigin(0, 0.5);
+    this.hpFill = this.add.rectangle(10, 34, 92, 6, 0x45d36f).setOrigin(0, 0.5);
+    this.message = this.add.text(WIDTH / 2, 63, '', { fontSize: '25px', fontStyle: 'bold', color: '#ffffff', stroke: '#17213d', strokeThickness: 6 }).setOrigin(0.5).setDepth(10);
     this.updateHud();
   }
 
   createCastleAndHero() {
-    const castle = this.add.container(45, 430);
+    const castle = this.add.container(0, 38);
     const stone = this.add.graphics();
-    stone.fillStyle(0xa9b4c4).fillRect(0, 42, 94, 110).fillTriangle(-5, 42, 47, -2, 99, 42);
-    stone.fillStyle(0x56657d).fillRect(35, 105, 25, 47);
-    stone.fillStyle(0x2d3e5a).fillRect(12, 57, 16, 23).fillRect(67, 57, 16, 23);
+    stone.fillStyle(0xa9b4c4).fillRect(0, 20, 104, HEIGHT - 58);
+    stone.fillStyle(0xced5dc).fillRect(0, 20, 104, 14);
+    stone.fillStyle(0x536178).fillRect(0, 20, 14, 18).fillRect(30, 20, 14, 18).fillRect(60, 20, 14, 18).fillRect(90, 20, 14, 18);
+    stone.fillStyle(0x7b8899).fillRect(45, HEIGHT - 118, 30, 80);
+    stone.fillStyle(0x58677d).fillRect(16, 76, 18, 26).fillRect(70, 150, 18, 26).fillRect(16, 300, 18, 26).fillRect(70, 420, 18, 26);
     castle.add(stone);
-    this.add.text(92, 587, '성', { fontSize: '15px', color: '#ffffff' }).setOrigin(0.5);
-    this.hero = this.add.container(150, 530);
+    this.hero = this.add.container(77, 82);
     const body = this.add.graphics();
     body.fillStyle(0xf2c49c).fillCircle(0, -25, 14);
     body.fillStyle(0x5a80d5).fillTriangle(-21, 14, 0, -13, 21, 14).fillRect(-13, 10, 26, 18);
     body.lineStyle(5, 0xd9e8fc).lineBetween(14, -3, 40, -29);
     this.hero.add(body);
-    this.add.text(150, 576, '영웅', { fontSize: '14px', color: '#dce9ff' }).setOrigin(0.5);
   }
 
   startWave() {
@@ -83,7 +82,7 @@ class BattleScene extends Phaser.Scene {
     const maxHp = isBoss ? 120 : 25 + this.wave * 9;
     const enemy = {
       isBoss, hp: maxHp, maxHp, speed: isBoss ? 11 : 17 + this.wave * 2,
-      body: this.add.container(440, Phaser.Math.Between(280, 555))
+      body: this.add.container(440, Phaser.Math.Between(105, 650))
     };
     const art = this.add.graphics();
     const color = isBoss ? 0xb54766 : 0x7e5cc2;
@@ -102,7 +101,7 @@ class BattleScene extends Phaser.Scene {
       enemy.body.x -= enemy.speed * delta / 1000;
       enemy.bar.x = enemy.body.x - (enemy.isBoss ? 27 : 17);
       enemy.bar.y = enemy.body.y - (enemy.isBoss ? 40 : 30);
-      if (enemy.body.x < 128) this.hitCastle(enemy);
+      if (enemy.body.x < 108) this.hitCastle(enemy);
     });
   }
 
@@ -126,7 +125,7 @@ class BattleScene extends Phaser.Scene {
 
   fireProjectile(target, damage, color) {
     if (!this.enemies.includes(target)) return;
-    const bolt = this.add.circle(this.hero.x + 24, this.hero.y - 23, 6, color).setDepth(5);
+    const bolt = this.add.circle(this.hero.x + 24, this.hero.y - 23, 7, color).setStrokeStyle(2, 0xffffff).setDepth(8);
     this.tweens.add({ targets: bolt, x: target.body.x, y: target.body.y, duration: 210, onComplete: () => {
       bolt.destroy();
       this.damageEnemy(target, damage);
@@ -177,7 +176,7 @@ class BattleScene extends Phaser.Scene {
     this.waveText.setText(`WAVE ${this.wave} / 3`);
     this.goldText.setText(`✦ ${this.gold}`);
     this.ammoText.setText(`수동 공격  ${'●'.repeat(this.ammo)}${'○'.repeat(3 - this.ammo)}`);
-    this.hpFill.displayWidth = 130 * this.castleHp / 100;
+    this.hpFill.displayWidth = 92 * this.castleHp / 100;
   }
 }
 

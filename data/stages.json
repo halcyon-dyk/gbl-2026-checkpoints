@@ -1,0 +1,45 @@
+{
+  "enemyTypes": {
+    "normal": {
+      "name": "일반 슬라임",
+      "hp": 34,
+      "speed": 38,
+      "size": 17,
+      "color": 8281282,
+      "castleDamage": 10,
+      "autoDamageMultiplier": 1,
+      "manualDamageMultiplier": 1
+    },
+    "swift": {
+      "name": "질주 슬라임",
+      "hp": 8,
+      "speed": 57,
+      "size": 11,
+      "color": 7854303,
+      "castleDamage": 7,
+      "autoDamageMultiplier": 1,
+      "manualDamageMultiplier": 1
+    },
+    "armored": {
+      "name": "장갑 슬라임",
+      "hp": 130,
+      "speed": 20,
+      "size": 25,
+      "color": 11942192,
+      "castleDamage": 18,
+      "autoDamageMultiplier": 0.2,
+      "manualDamageMultiplier": 2.5
+    }
+  },
+  "stages": [
+    {
+      "id": 1,
+      "name": "초원 외곽",
+      "waves": [
+        { "spawns": [{ "type": "normal", "count": 3, "interval": 950 }] },
+        { "spawns": [{ "type": "normal", "count": 4, "interval": 850 }] },
+        { "spawns": [{ "type": "normal", "count": 5, "interval": 760 }] }
+      ]
+    }
+  ]
+}

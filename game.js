@@ -1,12 +1,65 @@
 const WIDTH = 405;
 const HEIGHT = 720;
 
+class CombatEffects {
+  constructor(scene) {
+    this.scene = scene;
+    this.particles = Array.from({ length: 48 }, () => scene.add.circle(-100, -100, 3, 0xffffff).setDepth(30).setVisible(false));
+    this.damageTexts = Array.from({ length: 18 }, () => scene.add.text(-100, -100, '', { fontSize: '16px', fontStyle: 'bold', color: '#ffffff', stroke: '#51202a', strokeThickness: 3 }).setOrigin(0.5).setDepth(31).setVisible(false));
+    this.particleCursor = 0;
+    this.textCursor = 0;
+  }
+
+  burst(x, y, color, count = 8, spread = 34) {
+    for (let i = 0; i < count; i++) {
+      const particle = this.particles[this.particleCursor++ % this.particles.length];
+      this.scene.tweens.killTweensOf(particle);
+      const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+      const distance = Phaser.Math.Between(Math.floor(spread * 0.45), spread);
+      particle.setPosition(x, y).setRadius(Phaser.Math.Between(2, 4)).setFillStyle(color).setAlpha(1).setScale(1).setVisible(true);
+      this.scene.tweens.add({
+        targets: particle,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance,
+        alpha: 0,
+        scale: 0.25,
+        duration: Phaser.Math.Between(220, 360),
+        ease: 'Quad.Out',
+        onComplete: () => particle.setVisible(false)
+      });
+    }
+  }
+
+  damageNumber(x, y, damage) {
+    const text = this.damageTexts[this.textCursor++ % this.damageTexts.length];
+    this.scene.tweens.killTweensOf(text);
+    text.setText(`-${damage}`).setPosition(x, y).setAlpha(1).setScale(1).setVisible(true);
+    this.scene.tweens.add({
+      targets: text,
+      x: x + Phaser.Math.Between(-28, 28),
+      y: y + Phaser.Math.Between(38, 68),
+      alpha: 0,
+      scale: 0.75,
+      duration: 650,
+      ease: 'Quad.In',
+      onComplete: () => text.setVisible(false)
+    });
+  }
+}
+
 class BattleScene extends Phaser.Scene {
   constructor() {
     super('battle');
   }
 
+  preload() {
+    this.load.json('stages', 'data/stages.json');
+  }
+
   create() {
+    const stageData = this.cache.json.get('stages');
+    this.enemyTypes = stageData.enemyTypes;
+    this.stage = stageData.stages[0];
     this.castleHp = 100;
     this.gold = 0;
     this.wave = 1;
@@ -18,8 +71,9 @@ class BattleScene extends Phaser.Scene {
     this.drawBackground();
     this.createHud();
     this.createCastleAndHero();
+    this.effects = new CombatEffects(this);
     this.input.on('pointerdown', pointer => this.manualAttack(pointer));
-    this.time.addEvent({ delay: 1000, loop: true, callback: this.autoAttack, callbackScope: this });
+    this.time.addEvent({ delay: 500, loop: true, callback: this.autoAttack, callbackScope: this });
     this.time.addEvent({ delay: 2400, loop: true, callback: this.rechargeAmmo, callbackScope: this });
     this.startWave();
   }
@@ -51,6 +105,7 @@ class BattleScene extends Phaser.Scene {
     slime.fillStyle(0xffffff).fillCircle(334, 16, 2).fillCircle(340, 16, 2);
     this.monsterText = this.add.text(350, 16, '', { fontSize: '11px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0, 0.5);
     this.message = this.add.text(WIDTH / 2, 63, '', { fontSize: '25px', fontStyle: 'bold', color: '#ffffff', stroke: '#17213d', strokeThickness: 6 }).setOrigin(0.5).setDepth(10);
+    this.announcement = this.add.text(-120, HEIGHT / 2, '', { fontSize: '36px', fontStyle: 'bold', color: '#fff5a6', stroke: '#49391d', strokeThickness: 7 }).setOrigin(0.5).setDepth(20).setVisible(false);
     this.updateHud();
   }
 
@@ -73,25 +128,31 @@ class BattleScene extends Phaser.Scene {
 
   startWave() {
     if (!this.active) return;
-    this.message.setText(`WAVE ${this.wave}`).setAlpha(1);
-    this.tweens.add({ targets: this.message, alpha: 0, delay: 1100, duration: 500 });
-    const count = 5 + this.wave * 2;
-    this.pendingSpawns = count + (this.wave === 3 ? 1 : 0);
-    for (let i = 0; i < count; i++) this.time.delayedCall(700 + i * 750, () => this.spawnEnemy(false));
-    if (this.wave === 3) this.time.delayedCall(700 + count * 750, () => this.spawnEnemy(true));
+    this.playScreenSweep(`WAVE ${this.wave}`);
+    const wave = this.stage.waves[this.wave - 1];
+    this.pendingSpawns = wave.spawns.reduce((total, spawn) => total + spawn.count, 0);
+    let delay = 700;
+    wave.spawns.forEach(spawn => {
+      for (let i = 0; i < spawn.count; i++) {
+        this.time.delayedCall(delay, () => this.spawnEnemy(spawn.type));
+        delay += spawn.interval;
+      }
+    });
   }
 
-  spawnEnemy(isBoss) {
+  spawnEnemy(type) {
     this.pendingSpawns--;
     if (!this.active) return;
-    const maxHp = isBoss ? 120 : 25 + this.wave * 9;
+    const definition = this.enemyTypes[type];
     const enemy = {
-      isBoss, hp: maxHp, maxHp, speed: isBoss ? 11 : 17 + this.wave * 2,
+      type, hp: definition.hp, maxHp: definition.hp, speed: definition.speed, size: definition.size,
+      color: definition.color, castleDamage: definition.castleDamage,
+      autoDamageMultiplier: definition.autoDamageMultiplier, manualDamageMultiplier: definition.manualDamageMultiplier,
+      knockedBack: false,
       body: this.add.container(440, Phaser.Math.Between(105, 650))
     };
     const art = this.add.graphics();
-    const color = isBoss ? 0xb54766 : 0x7e5cc2;
-    const size = isBoss ? 27 : 17;
+    const { color, size } = enemy;
     art.fillStyle(color).fillCircle(0, 0, size).fillTriangle(-size, -size + 4, -size + 4, -size * 1.8).fillTriangle(size, -size + 4, size - 4, -size * 1.8);
     art.fillStyle(0xffffff).fillCircle(-size / 3, -2, 3).fillCircle(size / 3, -2, 3);
     enemy.body.add(art);
@@ -104,9 +165,10 @@ class BattleScene extends Phaser.Scene {
   update(_, delta) {
     if (!this.active) return;
     this.enemies.slice().forEach(enemy => {
+      if (enemy.knockedBack) return;
       enemy.body.x -= enemy.speed * delta / 1000;
-      enemy.bar.x = enemy.body.x - (enemy.isBoss ? 27 : 17);
-      enemy.bar.y = enemy.body.y - (enemy.isBoss ? 40 : 30);
+      enemy.bar.x = enemy.body.x - enemy.size;
+      enemy.bar.y = enemy.body.y - enemy.size - 13;
       if (enemy.body.x < 108) this.hitCastle(enemy);
     });
   }
@@ -125,40 +187,73 @@ class BattleScene extends Phaser.Scene {
       const current = Phaser.Math.Distance.Between(pointer.x, pointer.y, nearest.body.x, nearest.body.y);
       return d < current ? enemy : nearest;
     });
-    this.fireProjectile(target, 27, 0xffd35c);
+    this.fireProjectile(target, 27, 0xffd35c, true);
     this.updateHud();
   }
 
-  fireProjectile(target, damage, color) {
+  fireProjectile(target, damage, color, isStrong = false) {
     if (!this.enemies.includes(target)) return;
-    const bolt = this.add.circle(this.hero.x + 24, this.hero.y - 23, 7, color).setStrokeStyle(2, 0xffffff).setDepth(8);
-    this.tweens.add({ targets: bolt, x: target.body.x, y: target.body.y, duration: 210, onComplete: () => {
+    this.animateHeroShot(isStrong);
+    if (isStrong) this.effects.burst(this.hero.x + 24, this.hero.y - 23, 0xffdb65, 16, 58);
+    const bolt = this.add.circle(this.hero.x + 24, this.hero.y - 23, isStrong ? 11 : 7, color).setStrokeStyle(2, 0xffffff).setDepth(8);
+    this.tweens.add({ targets: bolt, x: target.body.x, y: target.body.y, duration: 105, onComplete: () => {
       bolt.destroy();
-      this.damageEnemy(target, damage);
+      this.damageEnemy(target, damage, isStrong ? 'manual' : 'auto');
     }});
   }
 
-  damageEnemy(enemy, damage) {
+  damageEnemy(enemy, damage, attackType) {
     if (!this.enemies.includes(enemy)) return;
-    enemy.hp -= damage;
+    const finalDamage = Math.max(1, Math.round(damage * enemy[`${attackType}DamageMultiplier`]));
+    enemy.hp -= finalDamage;
+    this.effects.damageNumber(enemy.body.x, enemy.body.y - enemy.size - 14, finalDamage);
     this.tweens.add({ targets: enemy.body, x: enemy.body.x + 7, yoyo: true, duration: 45, repeat: 1 });
     if (enemy.hp <= 0) {
-      this.gold += enemy.isBoss ? 50 : 8;
+      this.gold += 8;
+      this.effects.burst(enemy.body.x, enemy.body.y, enemy.color, enemy.type === 'armored' ? 15 : 9, enemy.type === 'armored' ? 52 : 32);
       enemy.body.destroy(); enemy.bar.destroy();
       this.enemies.splice(this.enemies.indexOf(enemy), 1);
       this.updateHud();
       this.checkWaveClear();
     } else {
-      enemy.bar.displayWidth = (enemy.isBoss ? 54 : 34) * enemy.hp / enemy.maxHp;
+      enemy.bar.displayWidth = enemy.size * 2 * enemy.hp / enemy.maxHp;
     }
   }
 
   hitCastle(enemy) {
-    this.castleHp = Math.max(0, this.castleHp - (enemy.isBoss ? 28 : 10));
-    enemy.body.destroy(); enemy.bar.destroy();
-    this.enemies.splice(this.enemies.indexOf(enemy), 1);
+    this.castleHp = Math.max(0, this.castleHp - enemy.castleDamage);
+    enemy.knockedBack = true;
+    enemy.body.x = 108;
+    this.tweens.add({
+      targets: enemy.body,
+      x: 174,
+      duration: 330,
+      ease: 'Back.Out',
+      onUpdate: () => { enemy.bar.x = enemy.body.x - enemy.size; },
+      onComplete: () => { if (this.active) enemy.knockedBack = false; }
+    });
     this.updateHud();
     if (this.castleHp === 0) this.finish('게임 오버');
+  }
+
+  animateHeroShot(isStrong) {
+    this.tweens.killTweensOf(this.hero);
+    this.hero.setScale(1);
+    this.tweens.add({ targets: this.hero, scale: isStrong ? 1.28 : 1.12, duration: 75, yoyo: true, ease: 'Quad.Out' });
+  }
+
+  playScreenSweep(text) {
+    this.tweens.killTweensOf(this.announcement);
+    this.announcement.setText(text).setPosition(-120, HEIGHT / 2).setScale(0.8).setAlpha(1).setVisible(true);
+    this.tweens.timeline({
+      targets: this.announcement,
+      tweens: [
+        { x: WIDTH / 2, duration: 420, ease: 'Cubic.Out' },
+        { scale: 1.25, duration: 180 },
+        { hold: 500 },
+        { x: WIDTH + 130, alpha: 0, duration: 420, ease: 'Cubic.In', onComplete: () => this.announcement.setVisible(false) }
+      ]
+    });
   }
 
   rechargeAmmo() {
@@ -167,7 +262,7 @@ class BattleScene extends Phaser.Scene {
 
   checkWaveClear() {
     if (!this.enemies.length && this.pendingSpawns === 0) {
-      if (this.wave === 3) this.finish('전투 승리!');
+      if (this.wave === this.stage.waves.length) this.finish('전투 승리!');
       else { this.wave++; this.time.delayedCall(1400, () => this.startWave()); }
     }
   }

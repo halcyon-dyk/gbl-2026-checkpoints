@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Neon Bastion — Tower Defense</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="stage.css" />
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   </head>
   <body>
@@ -44,10 +45,12 @@
             <div class="stats"><span>DMG <b id="stat-damage">8</b></span><span>RNG <b id="stat-range">120</b></span><span>SPD <b id="stat-speed">0.55s</b></span></div>
           </div>
           <button id="start-wave" class="wave-button">WAVE 01 시작 <span>›</span></button>
-          <p class="controls">R: 파동 시작 · ESC: 선택 해제</p>
+          <p class="controls">R: 파동 시작 · SPACE: 영웅 강공 · ESC: 선택 해제</p>
+          <button id="power-shot" class="power-button">영웅 강공 <span id="power-state">준비</span></button>
         </aside>
       </section>
     </main>
     <script src="game.js"></script>
+    <script src="stage.js"></script>
   </body>
 </html>
